@@ -1,0 +1,61 @@
+#!/bin/sh
+
+FAKEHOME=$XDG_DATA_HOME/fakehome
+
+_create_fakehome() {
+  ( mkdir $FAKEHOME ) || \
+    echo "Fakehome directory already exists. Skipping..."
+}
+
+_link_home() {
+  for FILE in $(ls -aA $HOME)
+  do
+    ln -s $HOME/$FILE $FAKEHOME/$FILE && \
+      echo "Linked $FILE" || \
+      echo "$FILE already linked. Skipping..."
+  done
+}
+
+_modify_application() {
+  APP=$1
+
+  sed "s|Exec=|Exec=env HOME=${FAKEHOME} |g" \
+    /usr/share/applications/$APP.desktop \
+    > $XDG_DATA_HOME/applications/$APP.desktop
+}
+
+_reset_application() {
+  APP=$1
+  
+  rm $XDG_DATA_HOME/applications/$APP.desktop
+}
+
+_move_file() {
+  mv $HOME/$1 $FAKEHOME/$1
+}
+
+_reset_file() {
+  mv $FAKEHOME/$1 $HOME/$1
+}
+
+_wrap_command() {
+   HOME=$FAKEHOME "$@"
+}
+
+if [ "$1" = "install" ] ; then
+  _create_fakehome && _link_home
+elif [ "$1" = "update" ] ; then
+  _link_home
+elif [ "$1" = "modify" ] ; then
+  _modify_application $2
+elif [ "$1" = "reset" ] ; then
+  _reset_application $2
+elif [ "$1" = "file" ] ; then
+  if [ "$2" = "move" ] ; then
+    _move_file $3
+  elif [ "$2" = "reset" ] ; then
+    _reset_file $3
+  fi
+elif [ "$1" = "wrap" ] ; then
+  _wrap_command $(echo "$@" | sed "s|wrap ||")
+fi
