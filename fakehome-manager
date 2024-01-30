@@ -42,20 +42,23 @@ _wrap_command() {
    HOME=$FAKEHOME "$@"
 }
 
-if [ "$1" = "install" ] ; then
-  _create_fakehome && _link_home
-elif [ "$1" = "update" ] ; then
-  _link_home
-elif [ "$1" = "modify" ] ; then
-  _modify_application $2
-elif [ "$1" = "reset" ] ; then
-  _reset_application $2
-elif [ "$1" = "file" ] ; then
-  if [ "$2" = "move" ] ; then
-    _move_file $3
-  elif [ "$2" = "reset" ] ; then
-    _reset_file $3
-  fi
-elif [ "$1" = "wrap" ] ; then
-  _wrap_command $(echo "$@" | sed "s|wrap ||")
-fi
+case "$1" in
+  install) _create_fakehome && _link_home 
+  ;;
+  update) _link_home
+  ;;
+  modify) _modify_application $2
+  ;;
+  reset) _reset_application $2
+  ;;
+  wrap) _wrap_command $(echo "$@" | sed "s|wrap ||")
+  ;;
+  file) 
+    case "$2" in
+      move) _move_file $3
+      ;;
+      reset) _reset_file $3
+      ;;
+    esac
+  ;;
+esac
